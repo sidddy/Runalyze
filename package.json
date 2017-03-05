@@ -17,9 +17,9 @@
   "devDependencies": {
     "bower": "^1.7.9",
     "del": "^2.2.0",
-    "gulp": "github:gulpjs/gulp#4.0",
+    "gulp": "git://github.com/gulpjs/gulp#4.0",
     "gulp-clean-css": "^3.0.3",
-    "gulp-cli": "gulpjs/gulp-cli",
+    "gulp-cli": "git://github.com/gulpjs/gulp-cli",
     "gulp-concat": "^2.5.2",
     "gulp-less": "^3.3.0",
     "gulp-phpunit": "^0.15.0",
