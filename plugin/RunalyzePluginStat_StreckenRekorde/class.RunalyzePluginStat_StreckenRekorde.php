@@ -14,6 +14,8 @@ use League\Geotools\Geotools;
 
 
 $PLUGINKEY = 'RunalyzePluginStat_StreckenRekorde';
+
+define("MAX_TIME", 999999);
 /**
  * Class: RunalyzePluginStat_StreckenRekorde
  * @author Sven Henkel
@@ -86,7 +88,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 			echo '<tbody>';
 			$found = 0;
 			foreach ($segment["records"] as $record) {
-				if ($record["time"] < PHP_INT_MAX) {
+				if ($record["time"] < MAX_TIME) {
 					$found = 1;
 					echo '<tr class="r">';
 					$date = (new LocalTime($record["start_time"]))->format('d.m.Y');
@@ -221,7 +223,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 					}
 				}
 				
-				$time = PHP_INT_MAX;
+				$time = MAX_TIME;
 				
 				if (($s_id != -1) && ($e_id != -1)) {
 					$trackdata = $Factory->trackdata($act["id"]);
