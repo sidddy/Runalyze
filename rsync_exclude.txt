@@ -1,0 +1,9 @@
+/data/
+/var/cache/
+/var/logs/
+.git
+.gitignore
+deploy.sh
+rsync_exclude.txt
+node_modules
+tests
