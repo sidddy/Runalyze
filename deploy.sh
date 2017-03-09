@@ -10,11 +10,11 @@ elif [ $1 == "local" ]
         if [[ -z $2 ]]
             then
                 echo "Running dry-run"
-                rsync --dry-run -az --force --progress --exclude-from=rsync_exclude.txt -e "ssh -p22" ./ sven@apollon:/var/www/runalyze
+                rsync --dry-run -az --force --delete --progress --exclude-from=rsync_exclude.txt -e "ssh -p22" ./ sven@apollon:/var/www/runalyze
         elif [ $2 == "go" ]
             then
                 echo "Running actual deploy"
-                rsync -az --force --progress --exclude-from=rsync_exclude.txt -e "ssh -p22" ./ sven@apollon:/var/www/runalyze
+                rsync -az --force --progress --delete --exclude-from=rsync_exclude.txt -e "ssh -p22" ./ sven@apollon:/var/www/runalyze
         else
             echo $ERRORSTRING;
         fi
