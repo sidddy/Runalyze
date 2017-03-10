@@ -1,6 +1,8 @@
 /data/
 /var/cache/
 /var/logs/
+/web/map/
+/web/img/
 .git
 .gitignore
 deploy.sh
