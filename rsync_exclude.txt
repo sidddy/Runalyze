@@ -3,6 +3,7 @@
 /var/logs/
 /web/map/
 /web/img/
+/web/cache/
 .git
 .gitignore
 deploy.sh
