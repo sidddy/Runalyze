@@ -1,6 +1,7 @@
 /data/
 /var/cache/
 /var/logs/
+/var/queue/
 /web/map/
 /web/img/
 /web/cache/
