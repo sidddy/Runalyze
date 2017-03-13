@@ -14,6 +14,9 @@ else
         TARGET="rp2";
     fi
     if [ $TARGET != "none" ]; then
+	echo -n "v" > web/version.txt
+	git log --oneline | wc -l >> web/version.txt
+	git log -1 --format=%cd --date=short >> web/version.txt
         if [[ -z $2 ]]
             then
                 echo "Running dry-run"
