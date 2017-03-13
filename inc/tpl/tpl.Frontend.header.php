@@ -25,6 +25,8 @@
 <div id="headline">
 	<span id="menu-link" onclick="$('#headline').toggleClass('menu-expanded');"><i class="fa fa-fw fa-bars"></i></span>
 	<a class="tab logo" href="<?php echo System::getFullDomain(); ?>" title="Runalyze">Runalyze</a>
+	<span class="left b tab"><?php readfile("version.txt"); ?></span>
+	
 
 	<?php if ($this instanceof \Symfony\Component\DependencyInjection\ContainerAwareInterface): ?>
 	<?php if ($this->get('security.authorization_checker')->isGranted('ROLE_USER')): ?>
