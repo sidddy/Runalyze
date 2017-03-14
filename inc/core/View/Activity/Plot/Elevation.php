@@ -30,10 +30,12 @@ class Elevation extends ActivityPlot {
 		/** @var \Runalyze\View\Plot\Series[] $allSeries */
 		$allSeries = [
 			new Series\Elevation($context),
-			new Series\Gradient($context)
+			new Series\Gradient($context),
+			new Series\VAM500($context)
 		];
 
 		$this->addMultipleSeries($allSeries);
+		$this->Plot->Options['yaxes'][2]['min'] = 0;
 
 		$allSeries[1]->hideIn($this);
 	}
