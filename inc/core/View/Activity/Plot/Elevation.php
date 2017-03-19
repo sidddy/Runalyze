@@ -31,7 +31,7 @@ class Elevation extends ActivityPlot {
 		$allSeries = [
 			new Series\Elevation($context),
 			new Series\Gradient($context),
-			new Series\VAM500($context)
+			new Series\VAM120($context)
 		];
 
 		$this->addMultipleSeries($allSeries);
