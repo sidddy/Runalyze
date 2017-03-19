@@ -35,7 +35,6 @@ class Elevation extends ActivityPlot {
 		];
 
 		$this->addMultipleSeries($allSeries);
-		$this->Plot->Options['yaxes'][2]['min'] = 0;
 
 		$allSeries[1]->hideIn($this);
 	}
