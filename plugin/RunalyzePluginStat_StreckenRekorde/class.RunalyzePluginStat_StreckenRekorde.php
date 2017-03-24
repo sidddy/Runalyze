@@ -93,7 +93,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 					echo '<tr class="r">';
 					$date = (new LocalTime($record["start_time"]))->format('d.m.Y');
 					echo '<td class="b l">'.$date.'</td>';
-					echo '<td class="b l">'.Ajax::trainingLink($record["activityid"], $this->labelFor($record["comment"])).'</td>';
+					echo '<td class="b l">'.Ajax::trainingLink($record["activityid"], $this->labelFor($record["title"])).'</td>';
 					echo '<td class="b l">'.Duration::format($record["time"]).'</td>';
 					echo '</tr>';
 				}
@@ -119,7 +119,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 				`'.PREFIX.'training`.`id`,
 				`'.PREFIX.'training`.`time`,
 				`'.PREFIX.'training`.`sportid`,
-				`'.PREFIX.'training`.`comment`,
+				`'.PREFIX.'training`.`title`,
 				`'.PREFIX.'training`.`routeid`
 			FROM `'.PREFIX.'training`
 			WHERE `'.PREFIX.'training`.`accountid`="'.SessionAccountHandler::getId().'" 
@@ -157,7 +157,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 			foreach ($activities as $act) {
 				$rec_entry = array();
 				$rec_entry["activityid"] = $act["id"];
-				$rec_entry["comment"] = $act["comment"];
+				$rec_entry["title"] = $act["title"];
 				$rec_entry["start_time"] = $act["time"];
 				
 				// check if we already have a record from cache
@@ -230,7 +230,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 					$time = $trackdata->time()[$e_id] - $trackdata->time()[$s_id];
 				} else {
 					// wipe out comment and start time to save space on DB
-					$rec_entry["comment"] = NULL;
+					$rec_entry["title"] = NULL;
 					$rec_entry["start_time"] = NULL;
 				}
 				
@@ -257,13 +257,12 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 	
 	/**
 	 * Get label
-	 * @param string $route
-	 * @param string $comment
+	 * @param string $title
 	 * @return string
 	 */
-	private function labelFor($comment) {
-		if (!is_null($comment) && ($comment != '')) {
-			return '<em>'.$comment.'</em>';
+	private function labelFor($title) {
+		if (!is_null($title) && ($title != '')) {
+			return '<em>'.$title.'</em>';
 		}
 
 		return '<em>'.__('unlabeled').'</em>';
