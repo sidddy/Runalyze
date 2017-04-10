@@ -30,7 +30,6 @@ class HeatmapController {
                "<head>\n".
                "<meta charset=\"UTF-8\">\n".
                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=yes\">\n".
-               "<base href=\"https://run.siddy.org/\">\n".
                "<link rel=\"stylesheet\" href=\"/assets/css/runalyze-style.css?v=4.0.0\">\n".
                "<title>RUNALYZE</title>\n".
                "<script>document.addEventListener(\"touchstart\", function(){}, true);</script>\n".
