@@ -2,12 +2,19 @@
 
 namespace Runalyze\Bundle\CoreBundle\Controller;
 
+use Runalyze\Bundle\CoreBundle\Bridge\Activity\Calculation\ClimbScoreCalculator;
+use Runalyze\Bundle\CoreBundle\Bridge\Activity\Calculation\FlatOrHillyAnalyzer;
+use Runalyze\Bundle\CoreBundle\Component\Activity\ActivityDecorator;
 use Runalyze\Bundle\CoreBundle\Component\Activity\Tool\BestSubSegmentsStatistics;
 use Runalyze\Bundle\CoreBundle\Component\Activity\Tool\TimeSeriesStatistics;
+use Runalyze\Bundle\CoreBundle\Component\Activity\VO2maxCalculationDetailsDecorator;
+use Runalyze\Bundle\CoreBundle\Component\Configuration\UnitSystem;
 use Runalyze\Bundle\CoreBundle\Entity\Account;
 use Runalyze\Bundle\CoreBundle\Entity\Trackdata;
-use Runalyze\Bundle\CoreBundle\Services\Activity\EffectiveVO2maxInfo;
+use Runalyze\Bundle\CoreBundle\Entity\Training;
 use Runalyze\Metrics\Velocity\Unit\PaceEnum;
+use Runalyze\Service\ElevationCorrection\StepwiseElevationProfileFixer;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
@@ -65,16 +72,12 @@ class ActivityController extends Controller
     }
 
     /**
-     * @Route("/call/call.Training.display.php")
      * @Route("/activity/{id}", name="ActivityShow", requirements={"id" = "\d+"})
+     * @Security("has_role('ROLE_USER')")
      */
-    public function displayAction($id = null, Account $account)
+    public function displayAction($id, Account $account)
     {
         $Frontend = new \Frontend(true, $this->get('security.token_storage'));
-
-        if (null === $id) {
-            $id = Request::createFromGlobals()->query->get('id');
-        }
 
         $Context = new Context($id, $account->getId());
 
@@ -108,7 +111,7 @@ class ActivityController extends Controller
      * @Route("/activity/{id}/edit", name="ActivityEdit")
      * @Security("has_role('ROLE_USER')")
      */
-    public function editAction($id = null)
+    public function editAction($id)
     {
         $Frontend = new \Frontend(true, $this->get('security.token_storage'));
 
@@ -196,25 +199,21 @@ class ActivityController extends Controller
 
     /**
      * @Route("/activity/{id}/vo2max-info")
+     * @ParamConverter("activity", class="CoreBundle:Training")
      * @Security("has_role('ROLE_USER')")
      */
-    public function vo2maxInfoAction($id, Account $account)
+    public function vo2maxInfoAction(Training $activity, Account $account)
     {
-        $Frontend = new \Frontend(true, $this->get('security.token_storage'));
+        if ($activity->getAccount()->getId() != $account->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
         $configList = $this->get('app.configuration_manager')->getList();
+        $activityContext = $this->get('app.activity_context.factory')->getContext($activity);
 
-        $EffectiveVO2maxInfo = new EffectiveVO2maxInfo();
-        $EffectiveVO2maxInfo->setContext(new Context($id, $account->getId()));
-        $EffectiveVO2maxInfo->setConfiguration($configList->getData()->getLegacyCategory(), $configList->getVO2max()->getLegacyCategory());
-
-        return $this->render(':activity:vo2max_info.html.twig', [
-            'title' => $EffectiveVO2maxInfo->getTitle(),
-            'raceDetails' => $EffectiveVO2maxInfo->getRaceCalculationDetails(),
-            'hrDetails' => $EffectiveVO2maxInfo->getHeartRateCalculationDetails(),
-            'factorDetails' => $EffectiveVO2maxInfo->getCorrectionFactorDetails(),
-            'elevationDetails' => $EffectiveVO2maxInfo->getElevationDetails(),
-            'useElevationAdjustment' => $EffectiveVO2maxInfo->usesElevationAdjustment(),
-            'activityVO2max' => $EffectiveVO2maxInfo->getActivityVO2max()
+        return $this->render('activity/vo2max_info.html.twig', [
+            'context' => $activityContext,
+            'details' => new VO2maxCalculationDetailsDecorator($activityContext, $configList)
         ]);
     }
 
@@ -287,7 +286,6 @@ class ActivityController extends Controller
     }
 
     /**
-     * @Route("/call/call.Training.elevationInfo.php")
      * @Route("/activity/{id}/elevation-info", requirements={"id" = "\d+"})
      * @Security("has_role('ROLE_USER')")
      */
@@ -353,6 +351,47 @@ class ActivityController extends Controller
             'statistics' => $statistics,
             'distanceArray' => $trackdataModel->distance(),
             'paceUnit' => $paceUnit
+        ]);
+    }
+
+    /**
+     * @Route("/activity/{id}/climb-score", requirements={"id" = "\d+"}, name="activity-tool-climb-score")
+     * @ParamConverter("activity", class="CoreBundle:Training")
+     * @Security("has_role('ROLE_USER')")
+     */
+    public function climbScoreAction(Training $activity, Account $account)
+    {
+        $activityContext = $this->get('app.activity_context.factory')->getContext($activity);
+
+        if ($activity->getAccount()->getId() != $account->getId() || !$activityContext->hasTrackdata() || !$activityContext->hasRoute()) {
+            throw $this->createNotFoundException('No activity found.');
+        }
+
+        if (
+            $activity->hasRoute() && null !== $activity->getRoute()->getElevationsCorrected() &&
+            $activity->hasTrackdata() && null !== $activity->getTrackdata()->getDistance()
+        ) {
+            $numDistance = count($activity->getTrackdata()->getDistance());
+            $numElevations = count($activity->getRoute()->getElevationsCorrected());
+
+            if ($numElevations > $numDistance) {
+                $activity->getRoute()->setElevationsCorrected(array_slice($activity->getRoute()->getElevationsCorrected(), 0, $numDistance));
+            }
+        }
+
+        if (null !== $activity->getRoute()->getElevationsCorrected() && null !== $activity->getTrackdata()->getDistance()) {
+            $activity->getRoute()->setElevationsCorrected((new StepwiseElevationProfileFixer(
+                5, StepwiseElevationProfileFixer::METHOD_VARIABLE_GROUP_SIZE
+            ))->fixStepwiseElevations(
+                $activity->getRoute()->getElevationsCorrected(),
+                $activity->getTrackdata()->getDistance()
+            ));
+        }
+
+        return $this->render('activity/tool/climb_score.html.twig', [
+            'context' => $activityContext,
+            'decorator' => new ActivityDecorator($activityContext),
+            'paceUnit' => $activity->getSport()->getSpeedUnit()
         ]);
     }
 
@@ -423,18 +462,19 @@ class ActivityController extends Controller
             $Matches[$ID] = array('match' => $found);
         }
 
-        $Response = array('matches' => $Matches);
-
-        return new JsonResponse($Response);
+        return new JsonResponse([
+            'matches' => $Matches
+        ]);
     }
 
     /**
      * Adjusted strtotime
      * Timestamps are given in UTC but local timezone offset has to be considered!
-     * @param $string
+     * @param string $string
      * @return int
      */
-    private function parserStrtotime($string) {
+    private function parserStrtotime($string)
+    {
         if (substr($string, -1) == 'Z') {
             return LocalTime::fromServerTime((int)strtotime(substr($string, 0, -1).' UTC'))->getTimestamp();
         }
