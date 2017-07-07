@@ -5,6 +5,7 @@
 /web/map/
 /web/img/
 /web/cache/
+/web/heatmap.html
 .git
 .gitignore
 deploy.sh
