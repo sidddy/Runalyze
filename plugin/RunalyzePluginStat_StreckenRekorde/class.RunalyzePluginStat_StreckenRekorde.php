@@ -5,6 +5,7 @@
  */
 
 use Runalyze\Model\Activity;
+use Runalyze\Model\Route;
 use Runalyze\View\Activity\Linker;
 use Runalyze\Activity\Duration;
 use Runalyze\Activity\Elevation;
@@ -111,7 +112,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 	private function initSegmentRecordData() {
 		$Factory = new Factory((int)SessionAccountHandler::getId());
 		$Geotools = new Geotools();
-		$this->counter = 50;
+		$this->counter = 100;
 		$Db = DB::getInstance();
 		
 		$activities = $Db->query('
@@ -187,42 +188,50 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 				$e_id = -1;
 				$ffwd = 0;
 				
-				
-				foreach ($route->geohashes() as $id => $geohash) {
-					//if ($act["id"] == 229) { print("ffwd: ".$ffwd."<br>\n"); }
-					if ($ffwd <= 0) {
-						$coor = $Geotools->geohash()->decode($geohash)->getCoordinate();
-					
-						if ($e_id == -1) {
-							// check if we are in starting area
-							$s_dist = $route->gpsDistance($coor->getLatitude(), $coor->getLongitude(), $start->getLatitude(), $start->getLongitude());
-							
-							if ($s_dist < 0.1) {
-								$s_id = $id;
-								//if ($act["id"] == 229) { print("s_id: ".$s_id."<br>\n"); }
-							} elseif ($s_dist > 1.0) {
-								$ffwd = 10;
-							}
-							
-							if ($s_id != -1) {
-								// check if we are in destination area
-								$ffwd = 0;
-								$e_dist = $route->gpsDistance($coor->getLatitude(), $coor->getLongitude(), $end->getLatitude(), $end->getLongitude());
-							
-								if ($e_dist < 0.1) {
-									$e_id = $id;
-									//if ($act["id"] == 229) { print("e_id: ".$e_id."<br>\n"); }
-									break;
-								} elseif (($e_dist > 1.0) && (($s_dist > 1.0))) {
-									$ffwd = 10;
-								}
-							}
-						}
-					} else {
-						$ffwd--;
-					}
-				}
-				
+				//plausibility check: dist(r_st->seg_st) + dist(seg_st->seg_end) + dist(seg_end->r_end) < r_dist
+				$r_start = $Geotools->geohash()->decode($route->get(Route\Entity::STARTPOINT))->getCoordinate();
+				$r_end = $Geotools->geohash()->decode($route->get(Route\Entity::ENDPOINT))->getCoordinate();
+				$d1 = $route->gpsDistance($r_start->getLatitude(), $r_start->getLongitude(), $start->getLatitude(), $start->getLongitude());
+				$d2 = $route->gpsDistance($start->getLatitude(), $start->getLongitude(), $end->getLatitude(), $end->getLongitude());
+				$d3 = $route->gpsDistance($end->getLatitude(), $end->getLongitude(), $r_end->getLatitude(), $r_end->getLongitude());
+				if ($d1 + $d2 + $d3 <= $route->distance()) {
+								
+                    foreach ($route->geohashes() as $id => $geohash) {
+                        //if ($act["id"] == 229) { print("ffwd: ".$ffwd."<br>\n"); }
+                        if ($ffwd <= 0) {
+                            $coor = $Geotools->geohash()->decode($geohash)->getCoordinate();
+                        
+                            if ($e_id == -1) {
+                                // check if we are in starting area
+                                $s_dist = $route->gpsDistance($coor->getLatitude(), $coor->getLongitude(), $start->getLatitude(), $start->getLongitude());
+                                
+                                if ($s_dist < 0.1) {
+                                    $s_id = $id;
+                                    //if ($act["id"] == 229) { print("s_id: ".$s_id."<br>\n"); }
+                                } elseif ($s_dist > 1.0) {
+                                    $ffwd = 10;
+                                }
+                                
+                                if ($s_id != -1) {
+                                    // check if we are in destination area
+                                    $ffwd = 0;
+                                    $e_dist = $route->gpsDistance($coor->getLatitude(), $coor->getLongitude(), $end->getLatitude(), $end->getLongitude());
+                                
+                                    if ($e_dist < 0.1) {
+                                        $e_id = $id;
+                                        //if ($act["id"] == 229) { print("e_id: ".$e_id."<br>\n"); }
+                                        break;
+                                    } elseif (($e_dist > 1.0) && (($s_dist > 1.0))) {
+                                        $ffwd = 10;
+                                    }
+                                }
+                            }
+                        } else {
+                            $ffwd--;
+                        }
+                    }
+                }
+                
 				$time = MAX_TIME;
 				
 				if (($s_id != -1) && ($e_id != -1)) {
