@@ -77,14 +77,17 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 	 * @see PluginStat::displayContent()
 	 */
 	protected function displayContent() {
-		$this->displaysegmentRecordData();
+		$this->displaySegmentRecordData();
+		$this->outputJavascript();
 
 		echo HTML::clearBreak();
 	}
 	
-	private function displaysegmentRecordData() {
+	private function displaySegmentRecordData() {
+		echo '<div style="padding-left:30px; padding-right:30px"><div class="seg-tables">';
 		foreach ($this->segmentRecordData as $segment) {
-			echo '<table class="fullwidth zebra-style">';
+			
+			echo '<div><table class="zebra-style center">';
 			echo '<thead><tr><th colspan="11" class="l">'.$segment["name"].'</th></tr></thead>';
 			echo '<tbody>';
 			$found = 0;
@@ -102,11 +105,27 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 			if ($found == 0) {
 				echo '<tr><td colspan="4"><em>'.__('No routes found.').'</em></td></tr>';
 			}
-			echo '</tbody></table>';
+			echo '</tbody></table></div>';
 		}
+		echo '</div></div>';  //seg-tabless
 		if ($this->counter == 0) {
 			echo "Incomplete data!! Reload to continue processing.";
 		}
+	}
+	
+	private function outputJavascript() {
+		echo '<script type="text/javascript" src="/assets/js/slick/slick.min.js"></script>';
+		echo '<script type="text/javascript">';
+		echo '  $(\'head\').append( $(\'<link rel="stylesheet" type="text/css" />\').attr(\'href\', \'/assets/js/slick/slick.css\') );';
+		echo '  $(\'head\').append( $(\'<link rel="stylesheet" type="text/css" />\').attr(\'href\', \'/assets/js/slick/slick-theme.css\') );';
+    	echo '  $(document).ready(function(){';
+      	echo '    $(\'.seg-tables\').slick({';
+      	echo '      arrows: true,';
+      	echo '      infinite: false,';
+      	echo '      dots: true';
+      	echo '    });';
+    	echo '  });';
+  		echo '</script>';
 	}
 	
 	private function initSegmentRecordData() {
