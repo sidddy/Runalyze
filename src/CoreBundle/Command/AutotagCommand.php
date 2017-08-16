@@ -72,8 +72,8 @@ class AutotagCommand extends ContainerAwareCommand
 					}
 				}
 				if ($dir != 0) {
-					// check duration 23..30 min
-					if ($act->getS() >= 23*60 AND $act->getS() <= 30*60) {
+					// check duration 21..30 min
+					if ($act->getS() >= 21*60 AND $act->getS() <= 30*60) {
 						$output->writeln("Fits so far. Direction: ".$dir." Duration: ".$act->getS()." Type: ".$act->getType());
 						// fields to be set: 
 						// - title
