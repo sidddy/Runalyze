@@ -4,11 +4,12 @@ namespace Runalyze\Bundle\CoreBundle\Form\Tools\Anova;
 
 use Runalyze\Bundle\CoreBundle\Component\Tool\Anova\QueryGroup\QueryGroups;
 use Runalyze\Bundle\CoreBundle\Entity\Account;
-use Runalyze\Bundle\CoreBundle\Entity\EquipmentType;
 use Runalyze\Bundle\CoreBundle\Entity\EquipmentTypeRepository;
 use Runalyze\Bundle\CoreBundle\Entity\Sport;
 use Runalyze\Bundle\CoreBundle\Entity\SportRepository;
+use Runalyze\Bundle\CoreBundle\Entity\Type;
 use Runalyze\Bundle\CoreBundle\Component\Tool\Anova\QueryValue\QueryValues;
+use Runalyze\Bundle\CoreBundle\Entity\TypeRepository;
 use Runalyze\Bundle\CoreBundle\Services\Configuration\ConfigurationManager;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -22,6 +23,9 @@ class AnovaType extends AbstractType
     /** @var SportRepository */
     protected $SportRepository;
 
+    /** @var TypeRepository */
+    protected $TypeRepository;
+
     /** @var EquipmentTypeRepository */
     protected $EquipmentTypeRepository;
 
@@ -30,12 +34,14 @@ class AnovaType extends AbstractType
 
     public function __construct(
         SportRepository $sportRepository,
+        TypeRepository $typeRepository,
         EquipmentTypeRepository $equipmentTypeRepository,
         TokenStorage $tokenStorage,
         ConfigurationManager $configurationManager
     )
     {
         $this->SportRepository = $sportRepository;
+        $this->TypeRepository = $typeRepository;
         $this->EquipmentTypeRepository = $equipmentTypeRepository;
         $this->TokenStorage = $tokenStorage;
         $this->ConfigurationManager = $configurationManager;
@@ -78,8 +84,31 @@ class AnovaType extends AbstractType
                     /** @var Sport $sport */
                     return $sport->getName();
                 },
-                'placeholder' => 'Choose sport(s)',
-                'attr' => ['class' => 'chosen-select full-size']
+                'attr' => [
+                    'data-placeholder' => __('Choose sport(s)'),
+                    'class' => 'chosen-select full-size'
+                ],
+                'choice_attr' => function($sport, $key, $index) {
+                    /* @var Sport $sport */
+                    return ['data-id' => $sport->getId()];
+                }
+            ])
+            ->add('type', ChoiceType::class, [
+                'required' => false,
+                'multiple' => true,
+                'choices' => $this->TypeRepository->findAllFor($this->getAccount()),
+                'choice_label' => function($type, $key, $index) {
+                    /** @var Type $type */
+                    return $type->getName();
+                },
+                'attr' => [
+                    'data-placeholder' => __('Choose activity type(s)'),
+                    'class' => 'chosen-select full-size'
+                ],
+                'choice_attr' => function($type, $key, $index) {
+                    /* @var Type $type */
+                    return ['data-sportid' => $type->getSport()->getId()];
+                }
             ])
             ->add('valueToGroupBy', ChoiceType::class, [
                 'choices' => [

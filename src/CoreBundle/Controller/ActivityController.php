@@ -311,7 +311,13 @@ class ActivityController extends Controller
     public function splitsInfoAction($id, Account $account)
     {
         $Frontend = new \Frontend(false, $this->get('security.token_storage'));
-        $Window = new Window(new Context($id, $account->getId()));
+        $context = new Context($id, $account->getId());
+
+        if (!$context->hasTrackdata()) {
+            return $this->render('activity/tool/not_possible.html.twig');
+        }
+
+        $Window = new Window($context);
         $Window->display();
 
         return new Response();
@@ -324,7 +330,13 @@ class ActivityController extends Controller
     public function elevationInfoAction($id, Account $account)
     {
         $Frontend = new \Frontend(false, $this->get('security.token_storage'));
-        $ElevationInfo = new \ElevationInfo(new Context($id, $account->getId()));
+        $context = new Context($id, $account->getId());
+
+        if (!$context->hasRoute()) {
+            return $this->render('activity/tool/not_possible.html.twig');
+        }
+
+        $ElevationInfo = new \ElevationInfo($context);
         $ElevationInfo->display();
 
         return new Response();
@@ -332,15 +344,19 @@ class ActivityController extends Controller
 
     /**
      * @Route("/activity/{id}/time-series-info", requirements={"id" = "\d+"}, name="activity-tool-time-series-info")
+     * @ParamConverter("trackdata", class="CoreBundle:Trackdata", options={"activity" = "id"}, isOptional="true")
      * @Security("has_role('ROLE_USER')")
      */
-    public function timeSeriesInfoAction($id, Account $account)
+    public function timeSeriesInfoAction($id, Account $account, Trackdata $trackdata = null)
     {
-        /** @var Trackdata $trackdata */
-        $trackdata = $this->getDoctrine()->getManager()->getRepository('CoreBundle:Trackdata')->findOneBy([
-            'activity' => $id,
-            'account' => $account->getId()
-        ]);
+        if (null === $trackdata) {
+            return $this->render('activity/tool/not_possible.html.twig');
+        }
+
+        if ($trackdata->getAccount()->getId() != $account->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
         $trackdataModel = $trackdata->getLegacyModel();
 
         $paceUnit = PaceEnum::get(
@@ -359,15 +375,19 @@ class ActivityController extends Controller
 
     /**
      * @Route("/activity/{id}/sub-segments-info", requirements={"id" = "\d+"}, name="activity-tool-sub-segments-info")
+     * @ParamConverter("trackdata", class="CoreBundle:Trackdata", options={"activity" = "id"}, isOptional="true")
      * @Security("has_role('ROLE_USER')")
      */
-    public function subSegmentInfoAction($id, Account $account)
+    public function subSegmentInfoAction($id, Account $account, Trackdata $trackdata = null)
     {
-        /** @var Trackdata $trackdata */
-        $trackdata = $this->getDoctrine()->getManager()->getRepository('CoreBundle:Trackdata')->findOneBy([
-            'activity' => $id,
-            'account' => $account->getId()
-        ]);
+        if (null === $trackdata) {
+            return $this->render('activity/tool/not_possible.html.twig');
+        }
+
+        if ($trackdata->getAccount()->getId() != $account->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
         $trackdataModel = $trackdata->getLegacyModel();
 
         $paceUnit = PaceEnum::get(
@@ -394,8 +414,12 @@ class ActivityController extends Controller
     {
         $activityContext = $this->get('app.activity_context.factory')->getContext($activity);
 
-        if ((!$activity->isPublic() && $account == null) || !$activityContext->hasTrackdata() || !$activityContext->hasRoute()) {
+        if ((!$activity->isPublic() && $account == null)) {
             throw $this->createNotFoundException('No activity found.');
+        }
+
+        if (!$activityContext->hasTrackdata() || !$activityContext->hasRoute()) {
+            return $this->render('activity/tool/not_possible.html.twig');
         }
 
         if (
