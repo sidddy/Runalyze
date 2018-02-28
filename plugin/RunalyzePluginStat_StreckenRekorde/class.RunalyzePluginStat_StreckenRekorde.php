@@ -8,6 +8,7 @@ use Runalyze\Model\Activity;
 use Runalyze\Model\Route;
 use Runalyze\View\Activity\Linker;
 use Runalyze\Activity\Duration;
+use Runalyze\Activity\Distance;
 use Runalyze\Activity\Elevation;
 use Runalyze\Model\Factory;
 use Runalyze\Util\LocalTime;
@@ -17,6 +18,8 @@ use League\Geotools\Geotools;
 $PLUGINKEY = 'RunalyzePluginStat_StreckenRekorde';
 
 define("MAX_TIME", 999999);
+define("MAX_DISTANCE", 999999);
+
 /**
  * Class: RunalyzePluginStat_StreckenRekorde
  * @author Sven Henkel
@@ -54,7 +57,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 
 	/**
 	 * Init data 
-	 */
+     */
 	protected function prepareForDisplay() {
 		if (isset($_GET['ref']))                                                                                                                                     
         	if (is_numeric($_GET['ref']))                                                                                                                        
@@ -224,6 +227,7 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 					echo '<td class="b l">'.Ajax::trainingLink($record["activityid"], $this->labelFor($record["title"])).'</td>';
 					echo '<td class="b l">'.Duration::format($record["time"]).'</td>';
 					echo '<td class="b l">'.($ref_time==$record["time"]?' ':($ref_time>$record["time"]?'- '.Duration::format($ref_time-$record["time"]):'+ '.Duration::format($record["time"]-$ref_time))).'</td>';
+					echo '<td class="b l">'.(array_key_exists("distance", $record)?Distance::format($record["distance"]):"n/a").'</td>';
 					echo '</tr>';
 				}
 			}
@@ -311,6 +315,9 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 					if ($c_rec["activityid"] == $rec_entry["activityid"]) {
 						$cached = 1;
 						$rec_entry["time"] = $c_rec["time"];
+						if (array_key_exists("distance", $c_rec)) {
+                            $rec_entry["distance"] = $c_rec["distance"];
+                        }
 						array_push($records, $rec_entry);
 						break;
 					}
@@ -377,10 +384,12 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
                 }
                 
 				$time = MAX_TIME;
+				$distance = MAX_DISTANCE;
 				
 				if (($s_id != -1) && ($e_id != -1)) {
 					$trackdata = $Factory->trackdata($act["id"]);
 					$time = $trackdata->time()[$e_id] - $trackdata->time()[$s_id];
+					$distance = $trackdata->distance()[$e_id] - $trackdata->distance()[$s_id];
 				} else {
 					// wipe out comment and start time to save space on DB
 					$rec_entry["title"] = NULL;
@@ -388,8 +397,9 @@ class RunalyzePluginStat_StreckenRekorde extends PluginStat {
 				}
 				
 				$rec_entry["time"] = $time;
+				$rec_entry["distance"] = $distance;
 				array_push($records, $rec_entry);
-				$c_rec = array("activityid" => $rec_entry["activityid"], "time" => $rec_entry["time"]);
+				$c_rec = array("activityid" => $rec_entry["activityid"], "time" => $rec_entry["time"], "distance" => $rec_entry["distance"]);
 				array_push($cache, $c_rec);
 				$cache_needs_update = 1;
 			}
