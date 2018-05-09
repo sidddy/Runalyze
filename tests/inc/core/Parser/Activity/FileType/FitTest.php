@@ -470,7 +470,7 @@ class FitTest extends AbstractActivityParserTestCase
         $this->assertEquals(819, $this->Container->ActivityData->Duration);
         $this->assertEquals(2.029, $this->Container->ActivityData->Distance, '', 0.001);
 
-        $this->assertEquals(40.62, $this->Container->FitDetails->VO2maxEstimate);
+        $this->assertEquals(40.58, $this->Container->FitDetails->VO2maxEstimate);
         $this->assertEquals(1307, $this->Container->FitDetails->RecoveryTime);
         $this->assertEquals(3.2, $this->Container->FitDetails->TrainingEffect);
         $this->assertEquals(100, $this->Container->FitDetails->PerformanceCondition);
@@ -539,6 +539,8 @@ class FitTest extends AbstractActivityParserTestCase
         $this->assertNotEmpty($this->Container->ContinuousData->GroundContactTime);
         $this->assertNotEmpty($this->Container->ContinuousData->GroundContactBalance);
         $this->assertNotEmpty($this->Container->ContinuousData->VerticalOscillation);
+
+        $this->assertEquals(52.12, $this->Container->FitDetails->VO2maxEstimate);
 	}
 
 	/**
@@ -809,6 +811,23 @@ class FitTest extends AbstractActivityParserTestCase
         $this->assertNotNull($this->Container->ActivityData->AvgPronationExcursionRight);
     }
 
+    public function testEmptyRunScribeData()
+    {
+        $this->convertAndParse('fit/Fenix-3-with-empty-runscribe.fit');
+
+        $this->assertEmpty($this->Container->ContinuousData->ImpactGsLeft);
+        $this->assertEmpty($this->Container->ContinuousData->ImpactGsRight);
+        $this->assertEmpty($this->Container->ContinuousData->BrakingGsLeft);
+        $this->assertEmpty($this->Container->ContinuousData->BrakingGsRight);
+        $this->assertEmpty($this->Container->ContinuousData->FootstrikeTypeLeft);
+        $this->assertEmpty($this->Container->ContinuousData->FootstrikeTypeRight);
+        $this->assertEmpty($this->Container->ContinuousData->PronationExcursionLeft);
+        $this->assertEmpty($this->Container->ContinuousData->PronationExcursionRight);
+
+        $this->assertNull($this->Container->ActivityData->AvgPronationExcursionLeft);
+        $this->assertNull($this->Container->ActivityData->AvgPronationExcursionRight);
+    }
+
     public function testPerformanceConditionFromGarminForerunner735XT()
     {
         $this->convertAndParse('fit/FR735XT-with-performance-condition.fit');
@@ -816,7 +835,7 @@ class FitTest extends AbstractActivityParserTestCase
         $this->assertEquals(2671, $this->Container->ActivityData->Duration);
         $this->assertEquals(10.194, $this->Container->ActivityData->Distance, '', 0.001);
 
-        $this->assertEquals(64.02, $this->Container->FitDetails->VO2maxEstimate);
+        $this->assertEquals(63.59, $this->Container->FitDetails->VO2maxEstimate);
         $this->assertEquals(1842, $this->Container->FitDetails->RecoveryTime);
         $this->assertEquals(3.6, $this->Container->FitDetails->TrainingEffect);
         $this->assertEquals(107, $this->Container->FitDetails->PerformanceCondition);
